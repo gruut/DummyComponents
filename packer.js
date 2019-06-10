@@ -1,0 +1,201 @@
+/**
+ * packer functions
+ */
+// all about buffer encoding!
+// https://nodejs.org/docs/latest/api/buffer.html#buffer_class_method_buffer_from_string_encoding
+const protobuf = require("protobufjs");
+const cbor = require('ipld-dag-cbor')
+
+const HEADER_LENGTH = 58;
+const MAC_LENGTH = 64;
+const MSG_TYPE = {
+  MSG_TX: 0xB1,
+  MSG_REQ_SSIG: 0xB2,
+  MSG_SSIG: 0xB3,
+  MSG_JOIN: 0x54,
+  MSG_CHALLENGE: 0x55,
+  MSG_RESPONSE_1: 0x56,
+  MSG_RESPONSE_2: 0x57,
+  MSG_SUCCESS: 0x58,
+  MSG_ACCEPT: 0x59,
+  MSG_REQ_TX_CHECK: 0xC0,
+  MSG_RES_TX_CHECK: 0xC1,
+  MSG_QUERY: 0xC3,
+  MSG_RESULT: 0xC4,
+  MSG_NULL: 0x00,
+  MSG_SETUP_MERGER: 0xE1,
+  MSG_ERROR: 0xFF  
+};
+const COMP_TYPE = {
+	CBOR: 0x06,
+	NONE: 0xFF
+}
+
+const MAX_MSG_LENGTH = 4 * 1024 * 1024; /* temporary, 4MB */
+
+const pack = function (MSG_TYPE, data, sender_id){
+	let zip_data = zipIt(data);
+	let header = buildHeader(MSG_TYPE, zip_data, sender_id);
+  let mac = buildHMAC(data);
+  let str_data
+	return Buffer.concat([header, zip_data.body, mac], (HEADER_LENGTH + zip_data.length + MAC_LENGTH));
+};
+
+const unpack = function (data){
+	let header = recoverHeader(data);
+	let valid = checkHMAC(data, header);	// currently, do not check the mac.
+	return {
+    header: header,
+    body: recoverMsgBodyJson(data, HEADER_LENGTH, (header.total_length - HEADER_LENGTH), header.comp_type)
+  }
+}
+
+const zipIt = function (data){
+	let str_data = cbor.util.serialize(data);
+	let input = new Buffer.from(str_data);
+	var zip_data = {
+		body : input,
+		length : input.length
+	};
+
+	return zip_data;
+};
+
+
+const buildHeader = function (type_byte, zip_data, sender_id){
+	var head = {
+		front : headerFront(type_byte),
+    total_length : headerLength(zip_data.length),
+    worldid : headerWorldId(),
+		chainid : headerChainId(1),
+		sender : sender_id
+	};
+
+	return Buffer.concat([head.front, head.total_length, head.worldid, head.chainid, head.sender], HEADER_LENGTH);
+};
+
+const recoverHeader = function (h_buffer){
+	var header = {
+		P : h_buffer[0],
+		version : h_buffer[1],
+		msg_type : h_buffer[2],
+		mac_type : h_buffer[3],
+		comp_type : h_buffer[4],
+		not_use : h_buffer[5],
+		total_length : h_buffer.readInt32BE(6)
+  };
+  header.worldid = new Buffer(8);
+	header.chainid = new Buffer(8);
+	header.sender = new Buffer(32);
+
+	h_buffer.copy(header.worldid, 0, 10, 18);
+	h_buffer.copy(header.chainid, 0, 18, 26);
+	h_buffer.copy(header.sender, 0, 26, 58);
+	return header;
+};
+
+const recoverMsgBodyJson = function (body_buffer, header_length, body_length, comp_type){
+	let obj_buffer = new Buffer(body_length);
+	body_buffer.copy(obj_buffer, 0, header_length, header_length + body_length);
+
+	if (comp_type == COMP_TYPE.CBOR) {
+		return cbor.util.deserialize(obj_buffer)
+	} else if (comp_type == COMP_TYPE.NONE) {
+		return json_obj = JSON.parse(obj_buffer)
+	}
+};
+
+const checkHMAC = function (data, header){
+  return true
+	// let mac_left = buildHMAC(new Buffer.from(data, HEADER_LENGTH, (header.total_length - HEADER_LENGTH)));
+	// let mac_right = new Buffer.from(data, header.total_length, MAC_LENGTH);
+	// return (mac_left === mac_right)? true:false;
+};
+
+const buildHMAC = function (zip_data){
+	return new Buffer.allocUnsafe(8).fill(0);
+};
+
+// build front 6 bytes of the header
+const headerFront = function (type_byte){
+	return new Buffer.from([
+    0x50  // 'P'
+		,0x01 // major minor
+    ,type_byte
+		,0xFF // NONE
+		,COMP_TYPE.CBOR // NONE
+		,0x00 // not used
+		]);
+};
+
+const headerLength = function (length){
+	let buf = Buffer.allocUnsafe(4);
+	buf.writeInt32BE( (length + HEADER_LENGTH), 0);
+	return buf;
+};
+
+const headerWorldId = function() {
+	return Buffer.from("_TETHYS_");
+}
+
+const headerChainId = function (id){
+	return Buffer.from("TSTCHAIN")
+};
+
+const headerSender = function (sender_id){
+	if (sender_id.length > 8) return null;
+
+	return new Buffer.from(sender_id, 'hex');
+};
+
+const protobuf_msg_serializer = function(PROTO_PATH, msg_type_name, packed_msg){
+	const root = protobuf.loadSync(PROTO_PATH);
+
+	// Obtain a message type
+	var msg_type = root.lookupType(msg_type_name);
+	var payload = {message: packed_msg};
+	var errMsg = msg_type.verify(payload);
+	if(errMsg)
+		logger.error("failed to verify payload: " + errMsg);
+
+	var serialized_msg = msg_type.create(payload);	// byte packed msg => base64 msg
+	return serialized_msg;
+};
+
+const buildSigBuffer = function(tx){
+	let length = 0;
+	let bf_list = [];
+
+	length = pushBufferList(bf_list, length, Buffer.from(tx.txid, 'base64')); // b64 to buf
+	length = pushBufferList(bf_list, length, getBufferedTimestamp(tx.time));
+	length = pushBufferList(bf_list, length, Buffer.from(tx.rID));  // str to buf
+	length = pushBufferList(bf_list, length, Buffer.from(tx.type)); // str to buf 
+	for (let i=0; i<tx.content.length; i++){
+		length = pushBufferList(bf_list, length, Buffer.from(tx.content[i]));
+	}
+
+	const bf_combined = Buffer.concat(bf_list, length);
+	return bf_combined;
+}
+
+const getBufferedTimestamp = function(str_timestamp){
+	const bf_time = Buffer.allocUnsafe(8);
+	bf_time.writeInt32BE(0x0, 0);
+	bf_time.writeInt32BE(parseInt(str_timestamp, 10), 4);
+	return bf_time;
+}
+
+const pushBufferList = function(bf_list, length, single_buffer){
+	bf_list.push(single_buffer);
+	length += single_buffer.length;
+	return length;
+}
+
+const self = module.exports = {
+	pack : pack,
+	unpack : unpack,
+	protobuf_msg_serializer : protobuf_msg_serializer,
+	MSG_TYPE : MSG_TYPE,
+  buildSigBuffer : buildSigBuffer,
+  getBufferedTimestamp : getBufferedTimestamp
+};

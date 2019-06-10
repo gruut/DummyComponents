@@ -1,0 +1,22 @@
+{
+  "name": "tethysdummysigner",
+  "version": "1.0.0",
+  "description": "Tethys Public Network's Dummy Signer for test",
+  "main": "dummy_signer.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@grpc/proto-loader": "^0.5.1",
+    "async": "^3.0.1",
+    "bs58": "^4.0.1",
+    "crypto": "^1.0.1",
+    "grpc": "^1.21.1",
+    "ipld-dag-cbor": "^0.15.0",
+    "jsrsasign": "^8.0.12",
+    "protobufjs": "^6.8.8",
+    "secure-random": "^1.1.2"
+  }
+}
