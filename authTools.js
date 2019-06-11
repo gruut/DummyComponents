@@ -23,12 +23,12 @@ const intToLongBytes = function(int) {
 };
 
 const generateKeyPair = function() {
-  var ec = new cryptoUtils.crypto.ECDSA({'curve': 'secp256r1'})
+  var ec = new cryptoUtils.crypto.ECDSA({'curve': 'secp256r1'});
   return ec.generateKeyPairHex()
 };
 
 const generateSelfCert = function(keyPair) {
-  var ec = new cryptoUtils.crypto.ECDSA({'curve': 'secp256r1'})
+  var ec = new cryptoUtils.crypto.ECDSA({'curve': 'secp256r1'});
 	ec.setPrivateKeyHex(keyPair.ecprvhex);
   ec.setPublicKeyHex(keyPair.ecpubhex);
   
@@ -54,12 +54,24 @@ const generateSelfCert = function(keyPair) {
 }
 
 const signECDSA = function(keyPair, data) {
-  var ec = new cryptoUtils.crypto.ECDSA({'curve': 'secp256r1'})
+  var ec = new cryptoUtils.crypto.ECDSA({'curve': 'secp256r1'});
 	ec.setPrivateKeyHex(keyPair.ecprvhex);
   ec.setPublicKeyHex(keyPair.ecpubhex);
 
-  var sigValue = ec.signHex(data, keyPair.ecprvhex);
+  var sigValue = ec.signHex(data.getSHA256, keyPair.ecprvhex);
   return Buffer.from(sigValue, 'hex').toString('base64') //BASE64
+}
+
+const getPubPoint = function(keyPair) {
+  var ec = new cryptoUtils.crypto.ECDSA({'curve': 'secp256r1', 'pub': keyPair.ecpubhex});
+  return ec.getPublicKeyXYHex();
+}
+
+const getSecret = function(keyPair, otherPubKey) {
+  var ecdh = crypto.createECDH('prime256v1');
+  ecdh.setPrivateKey(keyPair.ecprvhex, 'hex');
+  
+  return ecdh.computeSecret(otherPubKey, 'hex');
 }
 
 const self = module.exports = {
@@ -69,5 +81,7 @@ const self = module.exports = {
   intToLongBytes: intToLongBytes,
   generateKeyPair: generateKeyPair,
   generateSelfCert: generateSelfCert,
-  signECDSA: signECDSA
+  signECDSA: signECDSA,
+  getPubPoint: getPubPoint,
+  getSecret: getSecret
 };

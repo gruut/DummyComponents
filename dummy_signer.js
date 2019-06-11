@@ -32,6 +32,7 @@ var COORD_FACTOR = 1e7;
 var ecKeyPair;
 var userId;
 var userNonce;
+var secretKey;
 
 function init(callback) {
   ecKeyPair = tools.generateKeyPair();
@@ -42,14 +43,51 @@ function init(callback) {
 
 function keyExService(callback) {
   console.log('[SEND] MSG_JOIN');
-  stub.KeyExService(generateMsgJoin(), function(err, reply) {
+  stub.keyExService(generateMsgJoin(), function(err, reply) {
     if (err)  {
-      console.log('[ERROR]' + error);
-      callback(error);
+      console.log('[ERROR]' + err);
+      callback(err);
       return;
     }
-    
-    console.log('SUCCESS');
+
+    console.log('[RECV] MSG_CHALLENGE');
+    let msgChallenge = packer.unpack(reply.message);
+    console.log('[SEND] MSG_RESPONSE1');
+    stub.keyExService(generateMsgRes1(msgChallenge.body.mn), function(err, reply) {
+      if (err)  {
+        console.log('[ERROR]' + err);
+        callback(err);
+        return;
+      }
+
+      console.log('[RECV] MSG_RESPONSE2');
+      let msgRes2 = packer.unpack(reply.message);
+      console.log('[SEND] MSG_SUCCESS');
+      stub.keyExService(generateMsgSuccess(msgRes2.body.dh.x, msgRes2.body.dh.y), function(err, reply) {
+        if (err)  {
+          console.log('[ERROR]' + err);
+          callback(err);
+          return;
+        }
+
+        console.log('[RECV] MSG_ACCEPT');
+        let msgAccept = packer.unpack(reply.message);
+
+        console.log('=====(Ready For Signing)====');
+        let identity = packer.grpcMsgSerializer(PROTO_PATH, "grpc_user.Identity", bs58.decode(userId));
+        let call = stub.pushService(identity);
+        
+        call.on('data', function(feature) {
+            console.log('[RECV] MSG_REQ_SSIG');
+        });
+        call.on('error', function(err) {
+          console.log('[ERROR]' + err);
+          callback(err);
+          return;
+        })
+        call.on('end', callback);
+      });
+    });
   });
 }
 
@@ -79,8 +117,8 @@ function generateMsgRes1(mergerNonce) {
   msg.un = userNonce;
 
   msg.dh = {
-    x: ecKeyPair.getPublicKeyXYHex().x,
-    y: ecKeyPair.getPublicKeyXYHex().y
+    x: tools.getPubPoint(ecKeyPair).x,
+    y: tools.getPubPoint(ecKeyPair).y
   };
 
   msg.user = {
@@ -96,6 +134,35 @@ function generateMsgRes1(mergerNonce) {
         ])
       )
   };
+
+  let packedMsg = packer.pack(
+    packer.MSG_TYPE.MSG_RESPONSE_1,
+    msg,
+    bs58.decode(userId)
+  );
+
+  var grpcMsg = packer.grpcMsgSerializer(PROTO_PATH, "grpc_user.Message", packedMsg);
+  return grpcMsg;
+}
+
+function generateMsgSuccess(mx, my) {
+  secretKey = tools.getSecret(ecKeyPair, "04" + mx + my)
+
+  let msg = {};
+  msg.time = tools.getTimestamp();
+  msg.user = userId;
+  msg.mode = "all";
+  msg.val = true;
+
+  let packedMsg = packer.pack(
+    packer.MSG_TYPE.MSG_SUCCESS,
+    msg,
+    bs58.decode(userId),
+    secretKey
+  );
+
+  var grpcMsg = packer.grpcMsgSerializer(PROTO_PATH, "grpc_user.Message", packedMsg);
+  return grpcMsg;
 }
 
 function main() {

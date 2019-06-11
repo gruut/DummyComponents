@@ -103,7 +103,7 @@ const getTimestamp = function(){
 const argvParser = function(process_argv){
     var obj = {};
 	const len = process_argv.length;
-    switch (len){
+    switch (len){ 
 		case 5:
 		obj.n = process_argv[4];
 
