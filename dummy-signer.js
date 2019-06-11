@@ -1,7 +1,7 @@
 var PROTO_PATH = __dirname + '/UserService.proto';
 
-var tools = require('./authTools.js');
-var packer = require('./msgPacker.js');
+var tools = require('./auth-tools.js');
+var packer = require('./msg-packer.js');
 
 var async = require('async');
 var bs58 = require('bs58');

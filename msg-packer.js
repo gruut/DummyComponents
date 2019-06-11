@@ -1,6 +1,6 @@
 const protobuf = require('protobufjs');
 const cbor = require('ipld-dag-cbor');
-const tools = require('./authTools.js');
+const tools = require('./auth-tools.js');
 const crypto = require('crypto');
 
 const HEADER_LENGTH = 58;
