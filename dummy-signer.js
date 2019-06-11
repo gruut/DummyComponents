@@ -2,6 +2,7 @@ var PROTO_PATH = __dirname + '/UserService.proto';
 
 var tools = require('./auth-tools.js');
 var packer = require('./msg-packer.js');
+var signtool = require('./agg-gamma-sig.js');
 
 var async = require('async');
 var bs58 = require('bs58');
@@ -21,13 +22,6 @@ var stub = new grpc_user.TethysUserService('0.0.0.0:8089',
                                        grpc.credentials.createInsecure());
 
 var COORD_FACTOR = 1e7;
-
-/**
- *  rpc PushService (Identity) returns (stream Message) {}
-    rpc KeyExService (Request) returns (Reply) {}
-    rpc UserService (Request) returns (Reply) {}
-    rpc SignerService (Request) returns (Reply) {}
- */
 
 var ecKeyPair;
 var userId;
@@ -77,8 +71,20 @@ function keyExService(callback) {
         let identity = packer.grpcMsgSerializer(PROTO_PATH, "grpc_user.Identity", bs58.decode(userId));
         let call = stub.pushService(identity);
         
-        call.on('data', function(feature) {
+        call.on('data', function(msg) {
             console.log('[RECV] MSG_REQ_SSIG');
+            let msgReqSsig = packer.unpack(msg.message);
+
+            console.log('[SEND] MSG_SSIG');
+            stub.signerService(generateMsgSsig(msgReqSsig.body), function(err, reply) {
+              if (err)  {
+                console.log('[ERROR]' + err);
+                callback(err);
+                return;
+              }
+              
+              console.log('[RECV] STATUS: ' + reply.status);
+            });
         });
         call.on('error', function(err) {
           console.log('[ERROR]' + err);
@@ -163,6 +169,39 @@ function generateMsgSuccess(mx, my) {
 
   var grpcMsg = packer.grpcMsgSerializer(PROTO_PATH, "grpc_user.Message", packedMsg);
   return grpcMsg;
+}
+
+function generateMsgSsig(msgReqSsig) {
+  let target = Buffer.concat([bs58.decode(msgReqSsig.block.id),
+    Buffer.from(msgReqSsig.block.txroot, 'base64'),
+    Buffer.from(msgReqSsig.block.usroot, 'base64'),
+    Buffer.from(msgReqSsig.block.csroot, 'base64')
+  ]);
+  
+  let signature = signtool.sign(ecKeyPair, tools.getSHA256(target));
+  let msg = {};
+  msg.block = {
+    id: msgReqSsig.block.id
+  };
+  msg.signer = {
+    id: userId,
+    sig: signature
+  };
+
+  let packedMsg = packer.pack(
+    packer.MSG_TYPE.MSG_SSIG,
+    msg,
+    bs58.decode(userId),
+    secretKey
+  );
+
+  var grpcMsg = packer.grpcMsgSerializer(PROTO_PATH, "grpc_user.Message", packedMsg);
+  return grpcMsg;
+}
+
+function signTest() {
+  var message = "This is test message for aggregation gamma signature";
+  agSign.sign(agSign.test_sk, Buffer.from(message));
 }
 
 function main() {

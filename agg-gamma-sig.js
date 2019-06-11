@@ -23,7 +23,8 @@ var test_pk = '-----BEGIN CERTIFICATE-----\n'
 + 'DocbVvQtIp+Hz4+8lSHaDy2N9TThUdo=\n'
 + '-----END CERTIFICATE-----\n';
 
-const sjcl = require('sjcl');
+const sjcl = require('./sjcl');
+const tools = require('./auth-tools.js');
 const EC = require('elliptic').ec;
 const curve = new EC('secp256k1');
 const BN = require('bn.js');
@@ -34,8 +35,10 @@ function hash_point(point) {
     var hash = crypto.createHash('sha256');
     var point_x_str = point.x.toString(16);
     hash.update(point_x_str.toUpperCase());
+
     var point_y_str = point.y.toString(16);
     hash.update(point_y_str.toUpperCase());
+    
     var hex = hash.digest('hex');
     var bigint = new BN(new BN(hex, 16).toString(10));
     return bigint;
@@ -80,12 +83,12 @@ function hash_point_msg(point, msg) {
     var y_str = point.y.toString(16);
     hash.update(y_str.toUpperCase());
     hash.update(msg);
-    var hex = hash.digest('hex');
+    var hex = hash.digest('hex');   
     var bigint = new BN(new BN(hex, 16).toString(10));
     return bigint;
 }
 
-function sign(sk_pem, msg) {
+function sign(keyPair, msg) {
     var r_str = sjcl.bn.random(sjcl.ecc.curves.k256.r).toString();
     var r = '';
 
@@ -94,7 +97,35 @@ function sign(sk_pem, msg) {
     }
 
     var bigint_r = new BN(new BN(r, 10).toString(10));
-    // console.log(`r : ${bigint_r}`);
+    console.log(`r : ${bigint_r}`);
+
+    var a = curve.g.mul(bigint_r);
+    var bigint_d = hash_point(a);
+    console.log(`d : ${bigint_d}`);
+
+    var bigint_sk = new BN(keyPair.ecprvhex);
+    var pk = tools.getPubPoint(keyPair);
+    var bigint_e = hash_point_msg(pk, msg);
+    console.log(`e : ${bigint_e}`);
+
+    var r_mul_d = new BN(bigint_r.mul(bigint_d).umod(curve.n));
+    var e_mul_sk = new BN(bigint_e.mul(bigint_sk).umod(curve.n));
+    var z = new BN(r_mul_d.sub(e_mul_sk)).umod(curve.n).toString();
+    console.log(`z: ${z}`);
+
+    return [bigint_d, z];
+}
+
+function signWithPem(sk_pem, msg) {
+    var r_str = sjcl.bn.random(sjcl.ecc.curves.k256.r).toString();
+    var r = '';
+
+    for(var i = 2; i < 66; ++i) {
+        r += r_str[i];
+    }
+
+    var bigint_r = new BN(new BN(r, 10).toString(10));
+    console.log(`r : ${bigint_r}`);
 
     var a = curve.g.mul(bigint_r);
     var bigint_d = hash_point(a);
@@ -104,7 +135,7 @@ function sign(sk_pem, msg) {
     var pk = temp_pk;
     
     var bigint_e = hash_point_msg(pk, msg);
-    // console.log(`e : ${bigint_e}`);
+    console.log(`e : ${bigint_e}`);
 
     var r_mul_d = new BN(bigint_r.mul(bigint_d).umod(curve.n));
     var e_mul_sk = new BN(bigint_e.mul(bigint_sk).umod(curve.n));
@@ -112,4 +143,9 @@ function sign(sk_pem, msg) {
     console.log(`z: ${z}`);
 
     return [bigint_d, z];
+}
+
+const self = module.exports = {
+  sign: sign,
+  test_sk: test_sk
 }

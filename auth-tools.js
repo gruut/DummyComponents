@@ -23,12 +23,12 @@ const intToLongBytes = function(int) {
 };
 
 const generateKeyPair = function() {
-  var ec = new cryptoUtils.crypto.ECDSA({'curve': 'secp256r1'});
+  var ec = new cryptoUtils.crypto.ECDSA({'curve': 'secp256k1'});
   return ec.generateKeyPairHex()
 };
 
 const generateSelfCert = function(keyPair) {
-  var ec = new cryptoUtils.crypto.ECDSA({'curve': 'secp256r1'});
+  var ec = new cryptoUtils.crypto.ECDSA({'curve': 'secp256k1'});
 	ec.setPrivateKeyHex(keyPair.ecprvhex);
   ec.setPublicKeyHex(keyPair.ecpubhex);
   
@@ -54,7 +54,7 @@ const generateSelfCert = function(keyPair) {
 }
 
 const signECDSA = function(keyPair, data) {
-  var ec = new cryptoUtils.crypto.ECDSA({'curve': 'secp256r1'});
+  var ec = new cryptoUtils.crypto.ECDSA({'curve': 'secp256k1'});
 	ec.setPrivateKeyHex(keyPair.ecprvhex);
   ec.setPublicKeyHex(keyPair.ecpubhex);
 
@@ -63,7 +63,7 @@ const signECDSA = function(keyPair, data) {
 }
 
 const getPubPoint = function(keyPair) {
-  var ec = new cryptoUtils.crypto.ECDSA({'curve': 'secp256r1', 'pub': keyPair.ecpubhex});
+  var ec = new cryptoUtils.crypto.ECDSA({'curve': 'secp256k1', 'pub': keyPair.ecpubhex});
   return ec.getPublicKeyXYHex();
 }
 
