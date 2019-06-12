@@ -29,6 +29,7 @@
     "ipld-dag-cbor": "^0.15.0",
     "jsrsasign": "^8.0.12",
     "protobufjs": "^6.8.8",
+    "request": "^2.88.0",
     "secure-random": "^1.1.2",
     "validator": "^11.0.0"
   }

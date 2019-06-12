@@ -53,6 +53,21 @@ const generateSelfCert = function(keyPair) {
 	return cert.getPEMString();
 };
 
+const generateCSR = function(keyPair, id) {
+	var ec = new cryptoUtils.crypto.ECDSA({ curve: 'secp256k1' });
+	ec.setPrivateKeyHex(keyPair.ecprvhex);
+	ec.setPublicKeyHex(keyPair.ecpubhex);
+
+	var csri = new cryptoUtils.asn1.csr.CertificationRequestInfo()
+	csri.setSubjectByParam({'str': '/CN=' + id})
+	csri.setSubjectPublicKeyByGetKey(ec)
+
+	var csr = new cryptoUtils.asn1.csr.CertificationRequest({'csrinfo': csri})
+	csr.sign('SHA256withECDSA', ec)
+
+	return csr.getPEMString()	
+};
+
 const signECDSA = function(keyPair, data) {
 	var ec = new cryptoUtils.crypto.ECDSA({ curve: 'secp256k1' });
 	ec.setPrivateKeyHex(keyPair.ecprvhex);
@@ -81,6 +96,7 @@ const self = (module.exports = {
 	intToLongBytes: intToLongBytes,
 	generateKeyPair: generateKeyPair,
 	generateSelfCert: generateSelfCert,
+	generateCSR: generateCSR,
 	signECDSA: signECDSA,
 	getPubPoint: getPubPoint,
 	getSecret: getSecret

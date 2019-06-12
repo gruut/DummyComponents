@@ -1,4 +1,5 @@
 var PROTO_PATH = __dirname + '/UserService.proto';
+var AUTH_URL = 'http://ec2-13-209-161-44.ap-northeast-2.compute.amazonaws.com:48080/v1/users';
 
 var tools = require('./common-tool.js');
 var packer = require('./msg-packer.js');
@@ -9,6 +10,7 @@ var async = require('async');
 var bs58 = require('bs58');
 var path = require('path');
 var grpc = require('grpc');
+var request = require('request');
 var protoLoader = require('@grpc/proto-loader');
 var packageDefinition = protoLoader.loadSync(PROTO_PATH, {
 	keepCase: true,
@@ -23,6 +25,7 @@ var stub;
 var COORD_FACTOR = 1e7;
 
 var ecKeyPair;
+var certificate;
 var userId;
 var userNonce;
 var secretKey;
@@ -31,7 +34,22 @@ function init(callback) {
 	ecKeyPair = authtool.generateKeyPair();
 	userId = bs58.encode(Buffer.from(authtool.getSHA256(ecKeyPair.ecpubhex), 'hex'));
 
-	keyExService(callback);
+	let options = {
+    uri: AUTH_URL,
+    method: 'POST',
+    body:{
+			csr: authtool.generateCSR(ecKeyPair, userId),
+			phone: '010-0000-0000'
+    },
+    json:true
+	};
+	
+	request(options, function(err, response, body) {
+		console.log(body.message);
+		certificate = body.certPem;
+		
+		keyExService(callback);
+	});
 }
 
 function keyExService(callback) {
@@ -124,7 +142,7 @@ function generateMsgRes1(mergerNonce) {
 
 	msg.user = {
 		id: userId,
-		pk: authtool.generateSelfCert(ecKeyPair),
+		pk: certificate,
 		sig: authtool.signECDSA(
 			ecKeyPair,
 			Buffer.concat([

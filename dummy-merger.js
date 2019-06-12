@@ -1,4 +1,5 @@
 var PROTO_PATH = __dirname + '/UserService.proto';
+var AUTH_URL = 'http://ec2-13-209-161-44.ap-northeast-2.compute.amazonaws.com:48080/v1/users';
 
 var tools = require('./common-tool.js');
 var packer = require('./msg-packer.js');
@@ -9,6 +10,7 @@ var async = require('async');
 var bs58 = require('bs58');
 var path = require('path');
 var grpc = require('grpc');
+var request = require('request');
 const readline = require('readline');
 const rl = readline.createInterface({
 	input: process.stdin,
@@ -29,14 +31,31 @@ var COORD_FACTOR = 1e7;
 
 var MERGER_ID;
 var ecKeyPair;
+var certificate;
 var mergerNonce;
 var secretKey;
 var height = 0;
 var pushService;
 
-function init() {
+function init(callback) {
 	ecKeyPair = authtool.generateKeyPair();
 	MERGER_ID = bs58.encode(Buffer.from(authtool.getSHA256(ecKeyPair.ecpubhex), 'hex'));
+
+	let options = {
+    uri: AUTH_URL,
+    method: 'POST',
+    body:{
+			csr: authtool.generateCSR(ecKeyPair, MERGER_ID),
+			phone: '010-0000-0000'
+    },
+    json:true
+	};
+	
+	request(options, function(err, response, body) {
+		console.log(body.message);
+		certificate = body.certPem;
+		return;
+	});
 }
 
 var recursiveAsyncReadLine = function(call) {
@@ -195,7 +214,7 @@ function generateMsgResponse2(userNonce, userPubPoint) {
 	msg.dh.y = point.y;
 	msg.merger = {};
 	msg.merger.id = MERGER_ID;
-	msg.merger.cert = authtool.generateSelfCert(ecKeyPair);
+	msg.merger.cert = certificate;
 
 	msg.merger.sig = authtool.signECDSA(
 		ecKeyPair,

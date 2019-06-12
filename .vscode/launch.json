@@ -8,7 +8,7 @@
       "type": "node",
       "request": "launch",
       "name": "Launch Program",
-      "program": "${workspaceFolder}\\dummy-merger.js"
+      "program": "${workspaceFolder}\\dummy-signer.js"
     }
   ]
 }
