@@ -8,8 +8,16 @@
     "merger": "node dummy-merger.js",
     "signer": "node dummy-signer.js"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gruut/DummyComponents.git"
+  },
   "author": "",
   "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/gruut/DummyComponents/issues"
+  },
+  "homepage": "https://github.com/gruut/DummyComponents/blob/master/README.md",
   "dependencies": {
     "@grpc/proto-loader": "^0.5.1",
     "asn1.js": "^5.0.1",

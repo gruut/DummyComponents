@@ -3,6 +3,8 @@
 - node.js로 만든 grpc 네트워크 에뮬레이터입니다.
 - `merger`와 `signer`를 구동시킬 수 있습니다.
 
+
+
 ## Dummy Merger
 
 ### 어떻게 실행하나요?
@@ -20,6 +22,8 @@
 - 메세지 검증을 하지는 않습니다.
 - 1개의 `Signer`에만 정상적으로 메세지 전송이 가능합니다.
 - `MSG_REQ_SSIG` 전송 시, block height는 무의미합니다.
+
+
 
 ## Dummy Signer
 
