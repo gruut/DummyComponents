@@ -35,19 +35,19 @@ function init(callback) {
 	userId = bs58.encode(Buffer.from(authtool.getSHA256(ecKeyPair.ecpubhex), 'hex'));
 
 	let options = {
-    uri: AUTH_URL,
-    method: 'POST',
-    body:{
+		uri: AUTH_URL,
+		method: 'POST',
+		body: {
 			csr: authtool.generateCSR(ecKeyPair, userId),
 			phone: '010-0000-0000'
-    },
-    json:true
+		},
+		json: true
 	};
-	
+
 	request(options, function(err, response, body) {
 		console.log(body.message);
 		certificate = body.certPem;
-		
+
 		keyExService(callback);
 	});
 }
@@ -150,7 +150,7 @@ function generateMsgRes1(mergerNonce) {
 				Buffer.from(userNonce, 'base64'),
 				Buffer.from(msg.dh.x, 'hex'),
 				Buffer.from(msg.dh.y, 'hex'),
-				authtool.intToLongBytes(msg.time)
+				authtool.intToDoubleBytes(msg.time)
 			])
 		)
 	};

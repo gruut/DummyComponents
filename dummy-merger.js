@@ -42,15 +42,15 @@ function init(callback) {
 	MERGER_ID = bs58.encode(Buffer.from(authtool.getSHA256(ecKeyPair.ecpubhex), 'hex'));
 
 	let options = {
-    uri: AUTH_URL,
-    method: 'POST',
-    body:{
+		uri: AUTH_URL,
+		method: 'POST',
+		body: {
 			csr: authtool.generateCSR(ecKeyPair, MERGER_ID),
 			phone: '010-0000-0000'
-    },
-    json:true
+		},
+		json: true
 	};
-	
+
 	request(options, function(err, response, body) {
 		console.log(body.message);
 		certificate = body.certPem;
@@ -65,9 +65,6 @@ var recursiveAsyncReadLine = function(call) {
 			call.end();
 			return rl.close(); //closing RL and returning from function.
 		}
-		height++;
-		var msg = generateMsgReqSsig();
-		call.write(msg);
 	});
 };
 
@@ -75,6 +72,9 @@ function PushService(call) {
 	height = 0;
 	pushService = call;
 	console.log('[READY] PushService');
+	height++;
+	var msg = generateMsgReqSsig();
+	call.write(msg);
 	recursiveAsyncReadLine(call);
 }
 
@@ -151,10 +151,10 @@ function generateMsgReqSsig() {
 			authtool.getSHA256(
 				Buffer.concat([
 					bs58.decode(msg.producer.id),
-					authtool.intToLongBytes(msg.block.time),
+					authtool.intToDoubleBytes(msg.block.time),
 					Buffer.from(msg.block.world),
 					Buffer.from(msg.block.chain),
-					authtool.intToLongBytes(msg.block.height),
+					authtool.intToDoubleBytes(msg.block.height),
 					bs58.decode(msg.block.previd)
 				])
 			),
@@ -224,7 +224,7 @@ function generateMsgResponse2(userNonce, userPubPoint) {
 				Buffer.from(userNonce, 'base64'),
 				Buffer.from(msg.dh.x, 'hex'),
 				Buffer.from(msg.dh.y, 'hex'),
-				authtool.intToLongBytes(msg.time)
+				authtool.intToDoubleBytes(msg.time)
 			],
 			136
 		)

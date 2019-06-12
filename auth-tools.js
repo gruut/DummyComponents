@@ -17,10 +17,16 @@ const getRandomBase64 = function(length) {
 
 // convert INTEGER into 4 bytes array
 const intToLongBytes = function(int) {
-	let buf = Buffer.allocUnsafe(4);
+	let buf = Buffer.alloc(4);
 	buf.writeInt32BE(int, 0);
 	return buf;
 };
+
+const intToDoubleBytes = function(int) {
+	let buf = Buffer.alloc(8);
+	buf.writeInt32BE(int, 4);
+	return buf;
+}
 
 const generateKeyPair = function() {
 	var ec = new cryptoUtils.crypto.ECDSA({ curve: 'secp256k1' });
@@ -94,6 +100,7 @@ const self = (module.exports = {
 	getSHA256: getSHA256,
 	getRandomBase64: getRandomBase64,
 	intToLongBytes: intToLongBytes,
+	intToDoubleBytes: intToDoubleBytes,
 	generateKeyPair: generateKeyPair,
 	generateSelfCert: generateSelfCert,
 	generateCSR: generateCSR,

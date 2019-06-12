@@ -96,26 +96,27 @@ function sign(keyPair, msg) {
 	}
 
 	var bigint_r = new BN(new BN(r, 10).toString(10));
-	// console.log(`r : ${bigint_r}`);
+	console.log('[r]' + bigint_r.toString(16).length);
+	console.log(bigint_r.toString(16));
 
 	var a = curve.g.mul(bigint_r);
 	var bigint_d = hash_point(a);
-	// console.log(`d : ${bigint_d}`);
+	console.log('[d]' + bigint_d.toString(16).length);
+	console.log(bigint_d.toString(16));
 
 	var bigint_sk = new BN(keyPair.ecprvhex);
 	var pk = tools.getPubPoint(keyPair);
 	var bigint_e = hash_point_msg(pk, msg);
-	// console.log(`e : ${bigint_e}`);
+	console.log('[e]' + bigint_e.toString(16).length);
+	console.log(bigint_e.toString(16));
 
 	var r_mul_d = new BN(bigint_r.mul(bigint_d).umod(curve.n));
 	var e_mul_sk = new BN(bigint_e.mul(bigint_sk).umod(curve.n));
 	var z = new BN(r_mul_d.sub(e_mul_sk)).umod(curve.n).toString();
-	// console.log(`z: ${z}`);
-    
-    return Buffer.concat([
-        Buffer.from(bigint_d.toString(16)),
-        Buffer.from(z.toString(16))
-    ]).toString('base64');
+	console.log('[z]' + z.toString(16).length);
+	console.log(bigint_r.toString(16));
+
+	return Buffer.concat([ Buffer.from(bigint_d.toString(16)), Buffer.from(z.toString(16)) ]).toString('base64');
 }
 
 function signWithPem(sk_pem, msg) {
@@ -127,27 +128,32 @@ function signWithPem(sk_pem, msg) {
 	}
 
 	var bigint_r = new BN(new BN(r, 10).toString(10));
-	// console.log(`r : ${bigint_r}`);
+	console.log('[r]' + bigint_r.toString(16).length);
+	console.log(bigint_r.toString(16));
 
 	var a = curve.g.mul(bigint_r);
 	var bigint_d = hash_point(a);
-	// console.log(`d : ${bigint_d}`);
+	console.log('[d]' + bigint_d.toString(16).length);
+	console.log(bigint_d.toString(16));
 
 	var bigint_sk = new BN(pemToHex(sk_pem));
 	var pk = temp_pk;
 
 	var bigint_e = hash_point_msg(pk, msg);
-	// console.log(`e : ${bigint_e}`);
+	console.log('[e]' + bigint_e.toString(16).length);
+	console.log(bigint_e.toString(16));
 
 	var r_mul_d = new BN(bigint_r.mul(bigint_d).umod(curve.n));
 	var e_mul_sk = new BN(bigint_e.mul(bigint_sk).umod(curve.n));
 	var z = new BN(r_mul_d.sub(e_mul_sk)).umod(curve.n).toString();
-	// console.log(`z: ${z}`);
+	console.log('[z]' + z.toString(16).length);
+	console.log(bigint_r.toString(16));
 
-	return [ bigint_d, z ];
+	return Buffer.concat([ Buffer.from(bigint_d.toString(16)), Buffer.from(z.toString(16)) ]).toString('base64');
 }
 
 const self = (module.exports = {
 	sign: sign,
+	signWithPem: signWithPem,
 	test_sk: test_sk
 });
