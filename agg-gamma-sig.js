@@ -111,8 +111,11 @@ function sign(keyPair, msg) {
 	var e_mul_sk = new BN(bigint_e.mul(bigint_sk).umod(curve.n));
 	var z = new BN(r_mul_d.sub(e_mul_sk)).umod(curve.n).toString();
 	// console.log(`z: ${z}`);
-
-	return [ bigint_d, z ];
+    
+    return Buffer.concat([
+        Buffer.from(bigint_d.toString(16)),
+        Buffer.from(z.toString(16))
+    ]).toString('base64');
 }
 
 function signWithPem(sk_pem, msg) {
