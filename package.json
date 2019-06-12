@@ -4,7 +4,8 @@
   "description": "Tethys Public Network's Dummy Signer for test",
   "main": "dummy_signer.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "signer": "node dummy-signer.js"
   },
   "author": "",
   "license": "ISC",
@@ -19,6 +20,7 @@
     "ipld-dag-cbor": "^0.15.0",
     "jsrsasign": "^8.0.12",
     "protobufjs": "^6.8.8",
-    "secure-random": "^1.1.2"
+    "secure-random": "^1.1.2",
+    "validator": "^11.0.0"
   }
 }
