@@ -182,11 +182,6 @@ function generateMsgSsig(msgReqSsig) {
 	return grpcMsg;
 }
 
-function signTest() {
-	var message = 'This is test message for aggregation gamma signature';
-	agSign.sign(agSign.test_sk, Buffer.from(message));
-}
-
 function main() {
 	argv = tools.argvParser(process.argv);
 
@@ -194,7 +189,8 @@ function main() {
 		tools.printHowToUse();
 		return false;
 	}
-	stub = new grpc_user.TethysUserService('0.0.0.0:8089', grpc.credentials.createInsecure());
+	var add = argv.addr + ':' + argv.port;
+	stub = new grpc_user.TethysUserService(add, grpc.credentials.createInsecure());
 
 	async.series([ init ]);
 }

@@ -1,10 +1,11 @@
 {
   "name": "tethysdummysigner",
   "version": "1.0.0",
-  "description": "Tethys Public Network's Dummy Signer for test",
+  "description": "Tethys Public Network's Dummy components for test",
   "main": "dummy_signer.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
+    "merger": "node dummy-merger.js",
     "signer": "node dummy-signer.js"
   },
   "author": "",

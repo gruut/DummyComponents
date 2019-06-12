@@ -68,7 +68,7 @@ const getPubPoint = function(keyPair) {
 };
 
 const getSecret = function(keyPair, otherPubKey) {
-	var ecdh = crypto.createECDH('prime256v1');
+	var ecdh = crypto.createECDH('secp256k1');
 	ecdh.setPrivateKey(keyPair.ecprvhex, 'hex');
 
 	return ecdh.computeSecret(otherPubKey, 'hex');
