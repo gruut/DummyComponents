@@ -79,7 +79,7 @@ const signECDSA = function(keyPair, data) {
 	ec.setPrivateKeyHex(keyPair.ecprvhex);
 	ec.setPublicKeyHex(keyPair.ecpubhex);
 
-	var sigValue = ec.signHex(data.getSHA256, keyPair.ecprvhex);
+	var sigValue = ec.signHex(data, keyPair.ecprvhex);
 	return Buffer.from(sigValue, 'hex').toString('base64'); //BASE64
 };
 

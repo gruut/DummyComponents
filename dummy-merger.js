@@ -65,6 +65,9 @@ var recursiveAsyncReadLine = function(call) {
 			call.end();
 			return rl.close(); //closing RL and returning from function.
 		}
+		height++;
+		var msg = generateMsgReqSsig();
+		call.write(msg);
 	});
 };
 
@@ -72,9 +75,6 @@ function PushService(call) {
 	height = 0;
 	pushService = call;
 	console.log('[READY] PushService');
-	height++;
-	var msg = generateMsgReqSsig();
-	call.write(msg);
 	recursiveAsyncReadLine(call);
 }
 
@@ -225,8 +225,7 @@ function generateMsgResponse2(userNonce, userPubPoint) {
 				Buffer.from(msg.dh.x, 'hex'),
 				Buffer.from(msg.dh.y, 'hex'),
 				authtool.intToDoubleBytes(msg.time)
-			],
-			136
+			]
 		)
 	);
 
@@ -281,7 +280,7 @@ if (require.main === module) {
 		tools.printHowToUse();
 		return false;
 	}
-	var add = 'localhost:' + argv.port;
+	var add = '0.0.0.0:' + argv.port;
 
 	init();
 
