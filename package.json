@@ -24,7 +24,7 @@
     "async": "^3.0.1",
     "bs58": "^4.0.1",
     "crypto": "^1.0.1",
-    "elliptic": "^6.4.1",
+    "elliptic": "^6.5.3",
     "grpc": "^1.21.1",
     "ipld-dag-cbor": "^0.15.0",
     "jsrsasign": "^8.0.12",
