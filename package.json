@@ -31,6 +31,6 @@
     "protobufjs": "^6.8.8",
     "request": "^2.88.0",
     "secure-random": "^1.1.2",
-    "validator": "^11.0.0"
+    "validator": "^13.7.0"
   }
 }
